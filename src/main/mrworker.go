@@ -10,21 +10,24 @@ package main
 // Please do not change this file.
 //
 
-import "../mr"
+import (
+	"../mr"
+	"fmt"
+	"os"
+)
 import "plugin"
-import "os"
-import "fmt"
 import "log"
 
 func main() {
+	fmt.Printf("os.Args[1]:%s\n", os.Args[1])
 	if len(os.Args) != 2 {
 		fmt.Fprintf(os.Stderr, "Usage: mrworker xxx.so\n")
 		os.Exit(1)
 	}
+	fmt.Printf("os.Args[1]:%s\n", os.Args[1])
+	mapFun, reduceFun := loadPlugin(os.Args[1])
 
-	mapf, reducef := loadPlugin(os.Args[1])
-
-	mr.Worker(mapf, reducef)
+	mr.Worker(mapFun, reduceFun)
 }
 
 //
@@ -36,16 +39,18 @@ func loadPlugin(filename string) (func(string, string) []mr.KeyValue, func(strin
 	if err != nil {
 		log.Fatalf("cannot load plugin %v", filename)
 	}
-	xmapf, err := p.Lookup("Map")
+
+	xMapFun, err := p.Lookup("Map")
 	if err != nil {
 		log.Fatalf("cannot find Map in %v", filename)
 	}
-	mapf := xmapf.(func(string, string) []mr.KeyValue)
-	xreducef, err := p.Lookup("Reduce")
+	mapFun := xMapFun.(func(string, string) []mr.KeyValue)
+
+	xReduceFun, err := p.Lookup("Reduce")
 	if err != nil {
 		log.Fatalf("cannot find Reduce in %v", filename)
 	}
-	reducef := xreducef.(func(string, []string) string)
+	reduceFun := xReduceFun.(func(string, []string) string)
 
-	return mapf, reducef
+	return mapFun, reduceFun
 }

@@ -12,7 +12,7 @@ const (
 	ReducePhase TaskPhase = 1
 )
 
-const debug = false
+const debug = true
 
 func DebugPrintf(format string, v ...interface{}) {
 	if debug {

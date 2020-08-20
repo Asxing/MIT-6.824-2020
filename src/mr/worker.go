@@ -20,9 +20,9 @@ type KeyValue struct {
 }
 
 type worker struct {
-	id      int
-	mapf    func(string, string) []KeyValue
-	reducef func(string, []string) string
+	id        int
+	mapFun    func(string, string) []KeyValue
+	reduceFun func(string, []string) string
 }
 
 func (w *worker) register() {
@@ -76,7 +76,7 @@ func (w *worker) doMapTask(t Task) {
 		w.reportTask(t, false, err)
 		return
 	}
-	kvs := w.mapf(t.FileName, string(contents))
+	kvs := w.mapFun(t.FileName, string(contents))
 	reduces := make([][]KeyValue, t.NReduce)
 	for _, kv := range kvs {
 		idx := ihash(kv.Key) % t.NReduce
@@ -127,7 +127,7 @@ func (w *worker) doReduceTask(t Task) {
 
 	res := make([]string, 0, 100)
 	for k, v := range maps {
-		res = append(res, fmt.Sprintf("%v %v\n", k, w.reducef(k, v)))
+		res = append(res, fmt.Sprintf("%v %v\n", k, w.reduceFun(k, v)))
 	}
 
 	if err := ioutil.WriteFile(mergeName(t.Seq), []byte(strings.Join(res, "")), 0600); err != nil {
@@ -147,7 +147,7 @@ func (w *worker) reportTask(t Task, done bool, err error) {
 	args.Phase = t.Phase
 	args.WorkerId = w.id
 	reply := ReportTaskReply{}
-	if ok := call("Master.reportTask", &args, &reply); !ok {
+	if ok := call("Master.ReportTask", &args, &reply); !ok {
 		DebugPrintf("report task fail: %+v", args)
 	}
 }
@@ -165,13 +165,13 @@ func ihash(key string) int {
 //
 // main/mrworker.go calls this function.
 //
-func Worker(mapf func(string, string) []KeyValue,
-	reducef func(string, []string) string) {
+func Worker(mapFun func(string, string) []KeyValue,
+	reduceFun func(string, []string) string) {
 
 	// Your worker implementation here.
 	w := worker{}
-	w.mapf = mapf
-	w.reducef = reducef
+	w.mapFun = mapFun
+	w.reduceFun = reduceFun
 	w.register()
 	w.run()
 	// uncomment to send the Example RPC to the master.
@@ -207,16 +207,16 @@ func CallExample() {
 // usually returns true.
 // returns false if something goes wrong.
 //
-func call(rpcname string, args interface{}, reply interface{}) bool {
+func call(rpcName string, args interface{}, reply interface{}) bool {
 	// c, err := rpc.DialHTTP("tcp", "127.0.0.1"+":1234")
-	sockname := masterSock()
-	c, err := rpc.DialHTTP("unix", sockname)
+	sockName := masterSock()
+	c, err := rpc.DialHTTP("unix", sockName)
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
 	defer c.Close()
 
-	err = c.Call(rpcname, args, reply)
+	err = c.Call(rpcName, args, reply)
 	if err == nil {
 		return true
 	}

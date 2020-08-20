@@ -30,14 +30,6 @@ type TaskStat struct {
 }
 
 type Master struct {
-	/**
-	* mapTask，Task类数组
-	* reduceTask，Task类数组
-	* intermediateFile，映射数组，保存中间文件
-	* nReduce，整数，记录每个map任务划分多少份
-	* masterState，记录master的状态
-	* end，标志master是否结束任务
-	 */
 	// Your definitions here.
 	files     []string
 	nReduce   int
@@ -110,6 +102,7 @@ func (m *Master) schedule() {
 
 }
 
+// init map Task
 func (m *Master) initMapTask() {
 	m.taskPhase = MapPhase
 	m.TaskStats = make([]TaskStat, len(m.files))
